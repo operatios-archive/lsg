@@ -23,6 +23,8 @@ Examples:
 - `lsg dir1 dir2 --sort=extension`
 - `lsg **/*.flac **/*.png`
 
+Note: to use Globs on Linux you need to enquote them like this: `lsg "**/*"`
+
 Flags:
 
     -a, --all            do not ignore hidden files
