@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/logrusorgru/aurora"
 	"github.com/operatios/lsg/icons"
@@ -45,7 +46,11 @@ func (f File) sizeHuman() string {
 }
 
 func (f File) modTime() string {
-	return f.fileInfo.ModTime().Format("Jan 02 15:04")
+	modtime := f.fileInfo.ModTime()
+	if modtime.Year() == time.Now().Year() {
+		return modtime.Format("Jan 02 15:04")
+	}
+	return modtime.Format("Jan 02  2006")
 }
 
 func (f File) fileMode() string {
