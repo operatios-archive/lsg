@@ -1,7 +1,7 @@
 # lsg
 `lsg` is a cross-platform implementation of `ls` written in Go
 
-![lsg](./images/01.png)
+![lsg](./images/lsg.png)
 
 # Features
 - Eye candy (Colors, [Nerd Font](https://github.com/ryanoasis/nerd-fonts) icons)
@@ -50,9 +50,9 @@ To edit the color scheme or replace/add icons, you need to have Go installed
 
 # More screenshots
 
-![tree](./images/0x.png)
-![glob](./images/03.png)
-![list](./images/04.png)
+![tree](./images/tree.png)
+![glob](./images/glob.png)
+![list](./images/list.png)
 
 # Special thanks to:
 - [doublestar](https://github.com/bmatcuk/doublestar) - Powers globbing
