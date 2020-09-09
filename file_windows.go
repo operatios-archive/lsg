@@ -1,11 +1,17 @@
 package main
 
-import "syscall"
+import (
+	"os"
+	"syscall"
+)
+
+var (
+	msvcrt         = syscall.NewLazyDLL("msvcrt.dll")
+	_get_osfhandle = msvcrt.NewProc("_get_osfhandle")
+)
 
 func (f File) attrs() uint32 {
-	pUTF16, _ := syscall.UTF16PtrFromString(f.path)
-	attrs, _ := syscall.GetFileAttributes(pUTF16)
-	return attrs
+	return f.fileInfo.Sys().(*syscall.Win32FileAttributeData).FileAttributes
 }
 
 func (f File) isDir() bool {
@@ -21,4 +27,28 @@ func (f File) isHidden() bool {
 		return true
 	}
 	return f.attrs()&syscall.FILE_ATTRIBUTE_HIDDEN != 0
+}
+
+func (f File) nLink() int {
+	file, err := os.Open(f.path)
+	if err != nil {
+		return 1
+	}
+
+	_, handle, _ := _get_osfhandle.Call(file.Fd())
+	var info syscall.ByHandleFileInformation
+	syscall.GetFileInformationByHandle(syscall.Handle(handle), &info)
+
+	if info.NumberOfLinks > 0 {
+		return int(info.NumberOfLinks)
+	}
+	return 1
+}
+
+func (f File) owner() string {
+	return ""
+}
+
+func (f File) group() string {
+	return ""
 }

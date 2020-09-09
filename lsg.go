@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -167,10 +168,6 @@ func splitPath(path string) []string {
 }
 
 func humanSize(size int) string {
-	if size == 0 {
-		return "-"
-	}
-
 	if size < 1024 {
 		return fmt.Sprintf("%d", size)
 	}
@@ -274,44 +271,82 @@ func formatGrid(files []File, args Args) {
 
 func formatList(files []File, args Args) {
 	var sizes []string
-	var sizeTotal int
-	var sizeAlign int
+	var totalSize int
 
-	for i := range files {
+	var align struct {
+		fileMode int
+		nLink    int
+		owner    int
+		group    int
+	}
+
+	for _, file := range files {
 		var sizeEntry string
-		sizeTotal += files[i].size()
+		totalSize += file.size()
 
 		if args.Bytes {
-			sizeEntry = fmt.Sprint(files[i].size())
+			sizeEntry = fmt.Sprint(file.size())
 		} else {
-			sizeEntry = files[i].sizeHuman()
-		}
-
-		if len(sizeEntry) > sizeAlign {
-			sizeAlign = len(sizeEntry)
+			sizeEntry = file.sizeHuman()
 		}
 		sizes = append(sizes, sizeEntry)
+
+		// Getting field aligns
+		if args.FileMode {
+			if len(file.fileMode()) > align.fileMode {
+				align.fileMode = len(file.fileMode())
+			}
+
+			nLinkLen := len(fmt.Sprint(file.nLink()))
+			if nLinkLen > align.nLink {
+				align.nLink = nLinkLen
+			}
+		}
+
+		if runtime.GOOS == "linux" {
+			if len(file.owner()) > align.owner {
+				align.owner = len(file.owner())
+			}
+			if len(file.group()) > align.group {
+				align.group = len(file.group())
+			}
+		}
 	}
 
 	if args.Bytes {
-		fmt.Fprintf(BUF_STDOUT, "total %d\n", sizeTotal)
+		fmt.Fprintf(BUF_STDOUT, "total %d\n", totalSize)
 	} else {
-		fmt.Fprintf(BUF_STDOUT, "total %s\n", humanSize(sizeTotal))
+		fmt.Fprintf(BUF_STDOUT, "total %s\n", humanSize(totalSize))
 	}
 
-	for i := range files {
-		sizeEntry := fmt.Sprintf("%*s", sizeAlign, sizes[i])
-		if !args.NoColors {
-			sizeEntry = aurora.Colorize(sizeEntry, aurora.GreenFg).String()
-		}
-
+	for i, file := range files {
 		var line string
 		if args.FileMode {
-			line += fmt.Sprintf("%-11s ", files[i].fileMode())
+			line += fmt.Sprintf("%-*s ", align.fileMode, file.fileMode())
+			line += fmt.Sprintf("%*d ", align.nLink, file.nLink())
+		}
+
+		if runtime.GOOS == "linux" {
+			owner := file.owner()
+			group := file.group()
+
+			// On WSL under /mnt/ owner is ""
+			if owner == "" {
+				owner = group
+			}
+
+			line += fmt.Sprintf("%*s ", align.owner-1, owner)
+			line += fmt.Sprintf("%*s ", align.group-1, group)
+		}
+
+		sizeEntry := fmt.Sprintf("%4s", sizes[i])
+		if !args.NoColors {
+			sizeEntry = aurora.Colorize(sizeEntry, aurora.GreenFg).String()
 		}
 		line += sizeEntry + " "
 		line += files[i].modTime() + " "
 		line += files[i].colored(args)
+
 		fmt.Fprintln(BUF_STDOUT, line)
 	}
 }
