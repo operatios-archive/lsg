@@ -62,7 +62,7 @@ func (f File) isLink() bool {
 }
 
 func (f File) isBroken() bool {
-	target, _ := os.Readlink(f.path)
+	target, _ := filepath.EvalSymlinks(f.path)
 	_, err := os.Stat(target)
 	return err != nil
 }

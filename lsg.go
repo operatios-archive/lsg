@@ -307,7 +307,7 @@ func formatList(files []File, args Args) {
 
 		var line string
 		if args.FileMode {
-			line += files[i].fileMode() + " "
+			line += fmt.Sprintf("%-11s ", files[i].fileMode())
 		}
 		line += sizeEntry + " "
 		line += files[i].modTime() + " "
