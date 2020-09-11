@@ -274,6 +274,7 @@ func formatList(files []File, args Args) {
 	var totalSize int
 
 	var align struct {
+		size     int
 		fileMode int
 		nLink    int
 		owner    int
@@ -292,6 +293,10 @@ func formatList(files []File, args Args) {
 		sizes = append(sizes, sizeEntry)
 
 		// Getting field aligns
+		if len(sizeEntry) > align.size {
+			align.size = len(sizeEntry)
+		}
+
 		if args.FileMode {
 			if len(file.fileMode()) > align.fileMode {
 				align.fileMode = len(file.fileMode())
@@ -339,7 +344,7 @@ func formatList(files []File, args Args) {
 			line += fmt.Sprintf("%*s ", align.group-1, group)
 		}
 
-		sizeEntry := fmt.Sprintf("%4s", sizes[i])
+		sizeEntry := fmt.Sprintf("%*s", align.size, sizes[i])
 		if !args.NoColors {
 			sizeEntry = aurora.Colorize(sizeEntry, aurora.GreenFg).String()
 		}
