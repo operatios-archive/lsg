@@ -33,8 +33,12 @@ func Glob(path string, args Args) {
 			continue
 		}
 
-		fmt.Fprintf(BUF_STDOUT, "%s:\n", parent)
 		children := getFilesFromStr(parents[parent], args.All)
+		if len(children) == 0 {
+			continue
+		}
+
+		fmt.Fprintf(BUF_STDOUT, "%s:\n", parent)
 		processFiles(children, args)
 	}
 }
