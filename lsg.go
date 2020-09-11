@@ -301,7 +301,7 @@ func formatList(files []File, args Args) {
 			align.size = len(sizeEntry)
 		}
 
-		if args.FileMode {
+		if args.ListExtend {
 			if len(file.fileMode()) > align.fileMode {
 				align.fileMode = len(file.fileMode())
 			}
@@ -312,7 +312,7 @@ func formatList(files []File, args Args) {
 			}
 		}
 
-		if runtime.GOOS == "linux" {
+		if args.ListExtend && runtime.GOOS == "linux" {
 			if len(file.owner()) > align.owner {
 				align.owner = len(file.owner())
 			}
@@ -330,12 +330,12 @@ func formatList(files []File, args Args) {
 
 	for i, file := range files {
 		var line string
-		if args.FileMode {
+		if args.ListExtend {
 			line += fmt.Sprintf("%-*s ", align.fileMode, file.fileMode())
 			line += fmt.Sprintf("%*d ", align.nLink, file.nLink())
 		}
 
-		if runtime.GOOS == "linux" {
+		if args.ListExtend && runtime.GOOS == "linux" {
 			owner := file.owner()
 			group := file.group()
 
