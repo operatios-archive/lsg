@@ -19,7 +19,7 @@ Or download a binary from [releases page](https://github.com/operatios/lsg/relea
 
 # Usage
 Examples:
-- `lsg -alfb`
+- `lsg -alxb`
 - `lsg dir1 dir2 --sort=extension`
 - `lsg **/*.flac **/*.png`
 
@@ -30,7 +30,7 @@ Flags:
     -a, --all            do not ignore hidden files
     -l, --long-listing   use a long listing format
     -b, --bytes          with -l: print size in bytes
-    -f, --filemode       with -l: print filemode
+    -x, --extend         with -l: print filemode and owner/group info
     -t, --tree           use a tree format
     -s, --sort string    sort by [size|s|time|t|extension|x|category|c]
     -r, --reverse        reverse file order
