@@ -26,7 +26,9 @@ func Glob(path string, args Args) {
 	for k := range parents {
 		keys = append(keys, k)
 	}
-	sort.Sort(caseInsensitive(keys))
+	sort.Slice(keys, func(i, j int) bool {
+		return caseInsensitiveSort(keys[i], keys[j])
+	})
 
 	for _, parent := range keys {
 		if !args.All && isPathHidden(parent) {
