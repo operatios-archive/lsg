@@ -3,8 +3,8 @@ package main
 import "github.com/logrusorgru/aurora"
 
 const (
-	FILE = iota
-	DIR
+	DIR = iota
+	FILE
 	SYMLINK
 	BROKEN
 	ARCHIVE
