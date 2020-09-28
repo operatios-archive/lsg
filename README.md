@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/operatios/lsg)](https://goreportcard.com/report/operatios/lsg)
+
 # lsg
 `lsg` is a cross-platform implementation of `ls` written in Go
 
