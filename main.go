@@ -3,50 +3,81 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/logrusorgru/aurora"
+	"github.com/operatios/lsg/category"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
-	// To increase Stdout print speed we do buffered output
-	// So instead of fmt.Println we use fmt.Fprintln(BUF_STDOUT, ...)
-	// BUT, if an error causes program to os.Exit, use fmt.Println
-	BUF_STDOUT *bufio.Writer = bufio.NewWriter(os.Stdout)
-
-	ISATTY          = terminal.IsTerminal(int(os.Stdout.Fd()))
-	TTY_WIDTH, _, _ = terminal.GetSize(int(os.Stdout.Fd()))
+	bufStdout           = bufio.NewWriter(os.Stdout)
+	terminalWidth, _, _ = terminal.GetSize(int(os.Stdout.Fd()))
 )
 
+func isatty() bool {
+	return terminal.IsTerminal(int(os.Stdout.Fd()))
+}
+
 func main() {
-	defer BUF_STDOUT.Flush()
+	defer bufStdout.Flush()
+
 	args := getArgs()
 
-	if !ISATTY {
-		args.Columns = 1
-		args.NoColors = true
-		args.NoIcons = true
+	if len(args.paths) == 0 {
+		args.paths = append(args.paths, ".")
 	}
 
-	if runtime.GOOS == "windows" && !args.NoColors {
-		enableColors()
+	if !isatty() {
+		args.columns = 1
+		args.noColors = true
+		args.noIcons = true
 	}
 
-	if args.Tree {
+	if runtime.GOOS == "windows" && !args.noColors {
+		err := enableColors()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if args.tree {
 		doTree(args)
 	} else {
 		doLS(args)
 	}
 }
 
+func doLS(args Args) {
+	for _, path := range args.paths {
+
+		if strings.ContainsRune(path, '*') {
+			processGlob(path, args)
+		} else {
+			files, err := getFiles(path, args.all)
+
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+
+			if len(args.paths) > 1 {
+				fmt.Fprintln(bufStdout, filepath.Clean(path)+":")
+			}
+
+			processFiles(files, args)
+		}
+	}
+}
+
 func doTree(args Args) {
 	wd, _ := os.Getwd()
 
-	for _, path := range args.Paths {
+	for _, path := range args.paths {
 
 		var err error
 		if filepath.IsAbs(path) {
@@ -60,34 +91,14 @@ func doTree(args Args) {
 			continue
 		}
 
-		files, _ := getFilesFromPath(".", args.All)
+		files, _ := getFiles(".", args.all)
 
 		clean := filepath.Clean(path)
-		if !args.NoColors {
-			clean = aurora.Colorize(clean, colorScheme[DIR]).String()
+		if !args.noColors {
+			clean = aurora.Colorize(clean, colorScheme[category.Dir]).String()
 		}
-		fmt.Fprintln(BUF_STDOUT, clean)
+		fmt.Fprintln(bufStdout, clean)
 
 		processTree(files, map[int]bool{0: true}, args)
-	}
-}
-
-func doLS(args Args) {
-	for _, path := range args.Paths {
-		if strings.ContainsRune(path, '*') {
-			Glob(path, args)
-
-		} else {
-			files, err := getFilesFromPath(path, args.All)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				continue
-			}
-
-			if len(args.Paths) > 1 {
-				fmt.Fprintln(BUF_STDOUT, filepath.Clean(path)+":")
-			}
-			processFiles(files, args)
-		}
 	}
 }

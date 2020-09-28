@@ -1,8 +1,10 @@
 package main
 
-import "syscall"
+import (
+	"syscall"
 
-const ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
+	"golang.org/x/sys/windows"
+)
 
 var (
 	kernel32       = syscall.NewLazyDLL("Kernel32.dll")
@@ -16,11 +18,11 @@ func enableColors() error {
 		return err
 	}
 
-	if mode&ENABLE_VIRTUAL_TERMINAL_PROCESSING != 0 {
+	if mode&windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING != 0 {
 		return nil
 	}
 
-	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING
+	mode |= windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING
 	ret, _, err := setConsoleMode.Call(uintptr(syscall.Stdout), uintptr(mode))
 	if ret == 0 {
 		return err

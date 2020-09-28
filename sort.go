@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-func sortFiles(files []File, args Args) {
-	switch strings.ToLower(args.Sort) {
+func sortFiles(files []File, sortType string, reverse bool) {
+	switch strings.ToLower(sortType) {
 	case "s", "size":
 		sort.Slice(files, func(i, j int) bool {
 			return files[i].size() > files[j].size()
@@ -21,7 +21,7 @@ func sortFiles(files []File, args Args) {
 
 	case "x", "extension":
 		sort.Slice(files, func(i, j int) bool {
-			return caseInsensitiveSort(files[i].ext(), files[j].ext())
+			return cmpCaseInsensitive(files[i].ext(), files[j].ext())
 		})
 
 	case "c", "category":
@@ -31,21 +31,21 @@ func sortFiles(files []File, args Args) {
 
 	case "":
 		sort.Slice(files, func(i, j int) bool {
-			return caseInsensitiveSort(files[i].name(), files[j].name())
+			return cmpCaseInsensitive(files[i].name(), files[j].name())
 		})
 
 	default:
-		fmt.Fprintf(os.Stderr, "Invalid sorting parameter: %s\n", args.Sort)
+		fmt.Fprintf(os.Stderr, "Invalid sorting parameter: %s\n", sortType)
 		os.Exit(1)
 	}
 
-	if args.Reverse {
+	if reverse {
 		for i, j := 0, len(files)-1; i < j; i, j = i+1, j-1 {
 			files[i], files[j] = files[j], files[i]
 		}
 	}
 }
 
-func caseInsensitiveSort(a, b string) bool {
+func cmpCaseInsensitive(a, b string) bool {
 	return strings.ToLower(a) < strings.ToLower(b)
 }

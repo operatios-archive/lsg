@@ -7,16 +7,18 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora"
+	"github.com/operatios/lsg/category"
 	"github.com/operatios/lsg/icons"
 )
 
 type File struct {
-	fileInfo os.FileInfo
-	path     string
+	info os.FileInfo
+	path string
 }
 
-func fileFromStr(path string) (File, error) {
+func newFile(path string) (File, error) {
 	fileInfo, err := os.Lstat(path)
+
 	// File got deleted while executing
 	if err != nil {
 		return File{}, err
@@ -25,28 +27,20 @@ func fileFromStr(path string) (File, error) {
 	return File{fileInfo, path}, nil
 }
 
-func fileFromInfo(info os.FileInfo, path string) File {
-	return File{info, filepath.Join(path, info.Name())}
-}
-
 func (f File) name() string {
-	return f.fileInfo.Name()
+	return f.info.Name()
 }
 
 func (f File) ext() string {
 	return filepath.Ext(f.name())
 }
 
-func (f File) size() int {
-	return int(f.fileInfo.Size())
-}
-
-func (f File) sizeHuman() string {
-	return humanSize(f.size())
+func (f File) size() int64 {
+	return f.info.Size()
 }
 
 func (f File) modTime() string {
-	modtime := f.fileInfo.ModTime()
+	modtime := f.info.ModTime()
 	if modtime.Year() == time.Now().Year() {
 		return modtime.Format("Jan 02 15:04")
 	}
@@ -54,16 +48,17 @@ func (f File) modTime() string {
 }
 
 func (f File) fileMode() string {
-	return f.fileInfo.Mode().String()
+	return f.info.Mode().String()
 }
 
 func (f File) isLink() bool {
-	return f.fileInfo.Mode()&os.ModeSymlink != 0
+	return f.info.Mode()&os.ModeSymlink != 0
 }
 
 func (f File) isBroken() bool {
 	target, _ := filepath.EvalSymlinks(f.path)
 	_, err := os.Stat(target)
+
 	return err != nil
 }
 
@@ -81,9 +76,9 @@ func (f File) target() string {
 func (f File) pretty(args Args) string {
 	displayName := f.name()
 
-	if !args.NoTargets && f.isLink() {
+	if !args.noTargets && f.isLink() {
 		var arrow string
-		if args.NoIcons {
+		if args.noIcons {
 			arrow = "->"
 		} else {
 			arrow = icons.LinkArrow
@@ -91,7 +86,7 @@ func (f File) pretty(args Args) string {
 		displayName = displayName + " " + arrow + " " + f.target()
 	}
 
-	if !args.NoIcons {
+	if !args.noIcons {
 		displayName = f.icon() + " " + displayName
 	}
 
@@ -101,20 +96,20 @@ func (f File) pretty(args Args) string {
 func (f File) category() int {
 	if f.isLink() {
 		if f.isBroken() {
-			return BROKEN
+			return category.Broken
 		}
-		return SYMLINK
+		return category.Symlink
 	}
 
 	if f.isDir() {
-		return DIR
+		return category.Dir
 	}
 
-	if extensionCategory, ok := extensionToCategory[f.ext()]; ok {
-		return extensionCategory
+	if extCategory, ok := category.Extensions[f.ext()]; ok {
+		return extCategory
 	}
 
-	return FILE
+	return category.File
 }
 
 func (f File) icon() string {
@@ -129,8 +124,7 @@ func (f File) icon() string {
 		return icons.Dir
 	}
 
-	icon := icons.Extensions[f.ext()]
-	if icon != "" {
+	if icon, ok := icons.Extensions[f.ext()]; ok {
 		return icon
 	}
 
@@ -138,10 +132,10 @@ func (f File) icon() string {
 }
 
 func (f File) colored(args Args) string {
-	if args.NoColors {
-		return f.pretty(args)
-	}
+	pretty := f.pretty(args)
 
-	color := colorScheme[f.category()]
-	return aurora.Colorize(f.pretty(args), color).String()
+	if args.noColors {
+		return pretty
+	}
+	return aurora.Colorize(pretty, colorScheme[f.category()]).String()
 }

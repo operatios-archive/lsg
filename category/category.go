@@ -1,77 +1,22 @@
-package icons
+package category
 
 const (
-	File = ""
-	Dir  = ""
-
-	LinkFile  = ""
-	LinkDir   = ""
-	LinkArrow = ""
-
-	Archive = ""
-	Audio   = "ﱘ"
-	Image   = ""
-	Video   = ""
-
-	CLang   = ""
-	Clojure = ""
-	CPP     = ""
-	CSharp  = ""
-	Python  = ""
-	Shell   = ""
-	Subl    = ""
-	Win     = ""
+	Dir = iota
+	File
+	Symlink
+	Broken
+	Archive
+	Executable
+	Code
+	Image
+	Audio
+	Video
 )
 
-// To add new icons just add a new key: value pair here
-var Extensions = map[string]string{
-	".apk":              "",
-	".c":                CLang,
-	".h":                CLang,
-	".hpp":              CPP,
-	".hxx":              CPP,
-	".cfg":              "",
-	".clj":              Clojure,
-	".cljc":             Clojure,
-	".cljs":             Clojure,
-	".coffee":           "",
-	".cc":               CPP,
-	".cp":               CPP,
-	".cpp":              CPP,
-	".cxx":              CPP,
-	".cs":               CSharp,
-	".csproj":           CSharp,
-	".csx":              CSharp,
-	".css":              "",
-	".d":                "",
-	".dart":             "",
-	".db":               "",
-	".ds_store":         "",
-	".go":               "ﳑ",
-	".ipynb":            Python,
-	".md":               "",
-	".py":               Python,
-	".pyc":              Python,
-	".psd":              "",
-	".rs":               "",
-	".vue":              "﵂",
-	".sln":              "",
-	".sql":              "",
-	".sqlite3":          "",
-	".sublime_keymap":   Subl,
-	".sublime_package":  Subl,
-	".sublime_settings": Subl,
-	".sublime_theme":    Subl,
-	".txt":              "",
-	"ps1":               Shell,
-	"sh":                Shell,
-	"shell":             Shell,
-	".bat":              Win,
-	".exe":              Win,
-	".msi":              Win,
-
+var Extensions = map[string]int{
 	".7z":   Archive,
 	".a":    Archive,
+	".apk":  Archive,
 	".ar":   Archive,
 	".bz2":  Archive,
 	".cab":  Archive,
@@ -101,6 +46,53 @@ var Extensions = map[string]string{
 	".zip":  Archive,
 	".zipx": Archive,
 
+	".bat": Executable,
+	".exe": Executable,
+	".msi": Executable,
+
+	".c":         Code,
+	".cc":        Code,
+	".class":     Code,
+	".clj":       Code,
+	".cljc":      Code,
+	".cljs":      Code,
+	".coffee":    Code,
+	".cp":        Code,
+	".cpp":       Code,
+	".cs":        Code,
+	".csproj":    Code,
+	".css":       Code,
+	".csx":       Code,
+	".cxx":       Code,
+	".d":         Code,
+	".dart":      Code,
+	".diff":      Code,
+	".el":        Code,
+	".gd":        Code,
+	".go":        Code,
+	".h":         Code,
+	".html":      Code,
+	".ipynb":     Code,
+	".java":      Code,
+	".js":        Code,
+	".lua":       Code,
+	".m":         Code,
+	".m4":        Code,
+	".patch":     Code,
+	".php":       Code,
+	".pl":        Code,
+	".po":        Code,
+	".py":        Code,
+	".rb":        Code,
+	".rs":        Code,
+	".sh":        Code,
+	".swift":     Code,
+	".vb":        Code,
+	".vcxproj":   Code,
+	".vue":       Code,
+	".xcodeproj": Code,
+	".xml":       Code,
+
 	".3dm":  Image,
 	".3ds":  Image,
 	".ai":   Image,
@@ -118,6 +110,7 @@ var Extensions = map[string]string{
 	".max":  Image,
 	".png":  Image,
 	".ps":   Image,
+	".psd":  Image,
 	".svg":  Image,
 	".tga":  Image,
 	".thm":  Image,

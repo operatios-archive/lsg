@@ -45,7 +45,7 @@ To edit the color scheme or replace/add icons, you need to have Go installed
 
 - `git clone https://github.com/operatios/lsg.git`
 
-- Edit [this](https://github.com/operatios/lsg/blob/c379eb3bacaa258623f81f5d79f5deba092fb3d0/icons/icons.go#L24) and [this](https://github.com/operatios/lsg/blob/c379eb3bacaa258623f81f5d79f5deba092fb3d0/constants.go#L18) to your liking
+- Edit the [color scheme](./color_scheme.go) and [icons](https://github.com/operatios/lsg/blob/bb85231066010600ae15315c2880c204a9c3633a/icons/icons.go#L26) to your liking
 -  Run `go install` in edited directory
 
 # More screenshots

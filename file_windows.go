@@ -1,48 +1,50 @@
 package main
 
 import (
-	"os"
+	"log"
 	"syscall"
 )
 
-var (
-	msvcrt         = syscall.NewLazyDLL("msvcrt.dll")
-	_get_osfhandle = msvcrt.NewProc("_get_osfhandle")
-)
-
 func (f File) attrs() uint32 {
-	return f.fileInfo.Sys().(*syscall.Win32FileAttributeData).FileAttributes
+	return f.info.Sys().(*syscall.Win32FileAttributeData).FileAttributes
 }
 
 func (f File) isDir() bool {
 	if f.isLink() {
 		return f.attrs()&syscall.FILE_ATTRIBUTE_DIRECTORY != 0
 	}
-	return f.fileInfo.IsDir()
+	return f.info.IsDir()
 }
 
 func (f File) isHidden() bool {
-	dotHidden := f.name()[0] == '.'
-	if dotHidden {
+	if f.name()[0] == '.' {
 		return true
 	}
 	return f.attrs()&syscall.FILE_ATTRIBUTE_HIDDEN != 0
 }
 
-func (f File) nLink() int {
-	file, err := os.Open(f.path)
+func (f File) nLink() uint {
+	h, err := syscall.CreateFile(
+		syscall.StringToUTF16Ptr(f.path),
+		0,
+		0,
+		nil,
+		syscall.OPEN_EXISTING,
+		syscall.FILE_FLAG_OPEN_REPARSE_POINT|syscall.FILE_FLAG_BACKUP_SEMANTICS,
+		0)
+	defer syscall.Close(h)
+
 	if err != nil {
-		return 1
+		log.Panic(err)
 	}
 
-	_, handle, _ := _get_osfhandle.Call(file.Fd())
 	var info syscall.ByHandleFileInformation
-	syscall.GetFileInformationByHandle(syscall.Handle(handle), &info)
+	err = syscall.GetFileInformationByHandle(h, &info)
 
-	if info.NumberOfLinks > 0 {
-		return int(info.NumberOfLinks)
+	if err != nil {
+		log.Panic(err)
 	}
-	return 1
+	return uint(info.NumberOfLinks)
 }
 
 func (f File) owner() string {

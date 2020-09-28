@@ -13,8 +13,8 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
-func Glob(path string, args Args) {
-	fileNames := getFileNames(path)
+func processGlob(path string, args Args) {
+	fileNames := Glob(path)
 
 	parents := make(map[string][]string)
 	for _, fileName := range fileNames {
@@ -27,28 +27,28 @@ func Glob(path string, args Args) {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool {
-		return caseInsensitiveSort(keys[i], keys[j])
+		return cmpCaseInsensitive(keys[i], keys[j])
 	})
 
 	for _, parent := range keys {
-		if !args.All && isPathHidden(parent) {
+		if !args.all && isPathHidden(parent) {
 			continue
 		}
 
-		children := getFilesFromStr(parents[parent], args.All)
+		children := getParentFiles(parents[parent], args.all)
 		if len(children) == 0 {
 			continue
 		}
 
-		fmt.Fprintf(BUF_STDOUT, "%s:\n", parent)
+		fmt.Fprintf(bufStdout, "%s:\n", parent)
 		processFiles(children, args)
 	}
 }
 
 func processFiles(files []File, args Args) {
-	sortFiles(files, args)
+	sortFiles(files, args.sort, args.reverse)
 
-	if args.LongList {
+	if args.longList {
 		formatList(files, args)
 	} else {
 		formatGrid(files, args)
@@ -60,7 +60,7 @@ func processTree(files []File, fromDepths map[int]bool, args Args) {
 		return
 	}
 
-	sortFiles(files, args)
+	sortFiles(files, args.sort, args.reverse)
 	depth := len(splitPath(files[0].path)) - 1
 
 	for _, file := range files {
@@ -87,27 +87,29 @@ func processTree(files []File, fromDepths map[int]bool, args Args) {
 		} else {
 			prefix += "├──"
 		}
-		fmt.Fprintln(BUF_STDOUT, prefix+file.colored(args))
+
+		fmt.Fprintln(bufStdout, prefix+file.colored(args))
 
 		if file.isDir() && !file.isLink() {
-			subFiles, _ := getFilesFromPath(file.path, args.All)
+			subFiles, _ := getFiles(file.path, args.all)
 			processTree(subFiles, fromDepths, args)
 		}
 	}
 }
 
-func getFileNames(pattern string) []string {
+func Glob(pattern string) []string {
+	var matches []string
+
 	if !strings.Contains(pattern, "**") {
-		matches, _ := filepath.Glob(pattern)
-		return matches
+		matches, _ = filepath.Glob(pattern)
+	} else {
+		matches, _ = doublestar.Glob(pattern)
 	}
 
-	matches, _ := doublestar.Glob(pattern)
 	return matches
 }
 
-// We could just Glob path/* to reduce the amount of code, but this is faster
-func getFilesFromPath(path string, showHidden bool) ([]File, error) {
+func getFiles(path string, showHidden bool) ([]File, error) {
 	var result []File
 
 	fileInfos, err := ioutil.ReadDir(path)
@@ -117,7 +119,7 @@ func getFilesFromPath(path string, showHidden bool) ([]File, error) {
 	}
 
 	for _, fileInfo := range fileInfos {
-		file := fileFromInfo(fileInfo, path)
+		file := File{fileInfo, filepath.Join(path, fileInfo.Name())}
 
 		if showHidden || !file.isHidden() {
 			result = append(result, file)
@@ -126,11 +128,11 @@ func getFilesFromPath(path string, showHidden bool) ([]File, error) {
 	return result, nil
 }
 
-func getFilesFromStr(fileNames []string, showHidden bool) []File {
+func getParentFiles(fileNames []string, showHidden bool) []File {
 	var result []File
 
 	for _, fileName := range fileNames {
-		file, err := fileFromStr(fileName)
+		file, err := newFile(fileName)
 
 		if err != nil {
 			continue
@@ -141,56 +143,6 @@ func getFilesFromStr(fileNames []string, showHidden bool) []File {
 		}
 	}
 	return result
-}
-
-func isPathHidden(path string) bool {
-	components := splitPath(path)
-
-	for i := 1; i <= len(components); i++ {
-		f := filepath.Join(components[:i]...)
-		if f == "." {
-			continue
-		}
-
-		if strings.Contains(f, "..") {
-			abs, _ := filepath.Abs(f)
-			f = abs
-		}
-
-		file, err := fileFromStr(f)
-		if err != nil {
-			continue
-		}
-
-		if file.isHidden() {
-			return true
-		}
-	}
-	return false
-}
-
-func splitPath(path string) []string {
-	return strings.Split(path, string(filepath.Separator))
-}
-
-func humanSize(size int) string {
-	if size < 1024 {
-		return fmt.Sprintf("%d", size)
-	}
-
-	fSize := float64(size)
-	fSize /= 1024
-
-	for _, unit := range []rune{'K', 'M', 'G', 'T', 'P', 'E', 'Z'} {
-		if fSize < 9 {
-			return fmt.Sprintf("%.1f%c", fSize, unit)
-		} else if fSize < 1000 {
-			return fmt.Sprintf("%.0f%c", fSize, unit)
-		}
-		fSize /= 1024
-	}
-
-	return fmt.Sprintf("%.1f%c", fSize, 'Y')
 }
 
 func getRowCol(i int, rows int) (int, int) {
@@ -211,8 +163,8 @@ func formatRows(files []File, columns int, args Args) [][]string {
 
 	for i, file := range files {
 		_, col := getRowCol(i, rows)
-		nameLength := utf8.RuneCountInString(file.pretty(args))
 
+		nameLength := utf8.RuneCountInString(file.pretty(args))
 		if nameLength > columnWidths[col] {
 			columnWidths[col] = nameLength
 		}
@@ -222,7 +174,7 @@ func formatRows(files []File, columns int, args Args) [][]string {
 	for _, width := range columnWidths {
 		rowWidth += width
 	}
-	if rowWidth+(len(columnWidths)-1)*args.ColSep >= TTY_WIDTH {
+	if rowWidth+(len(columnWidths)-1)*args.colSep >= terminalWidth {
 		return nil
 	}
 
@@ -240,8 +192,8 @@ func formatGrid(files []File, args Args) {
 	columns := 2
 	goingBackwards := false
 
-	if args.Columns > 0 {
-		columns = args.Columns
+	if args.columns > 0 {
+		columns = args.columns
 		goingBackwards = true
 	}
 
@@ -265,19 +217,19 @@ func formatGrid(files []File, args Args) {
 
 	if columns > 1 {
 		for i := range rows {
-			sep := strings.Repeat(" ", args.ColSep)
-			fmt.Fprintln(BUF_STDOUT, strings.Join(rows[i], sep))
+			sep := strings.Repeat(" ", args.colSep)
+			fmt.Fprintln(bufStdout, strings.Join(rows[i], sep))
 		}
 	} else {
 		for i := range files {
-			fmt.Fprintln(BUF_STDOUT, files[i].colored(args))
+			fmt.Fprintln(bufStdout, files[i].colored(args))
 		}
 	}
 }
 
 func formatList(files []File, args Args) {
 	var sizes []string
-	var totalSize int
+	var totalSize int64
 
 	var align struct {
 		size     int
@@ -291,19 +243,18 @@ func formatList(files []File, args Args) {
 		var sizeEntry string
 		totalSize += file.size()
 
-		if args.Bytes {
+		if args.bytes {
 			sizeEntry = fmt.Sprint(file.size())
 		} else {
-			sizeEntry = file.sizeHuman()
+			sizeEntry = humanizeSize(file.size())
 		}
 		sizes = append(sizes, sizeEntry)
 
-		// Getting field aligns
 		if len(sizeEntry) > align.size {
 			align.size = len(sizeEntry)
 		}
 
-		if args.ListExtend {
+		if args.listExtend {
 			if len(file.fileMode()) > align.fileMode {
 				align.fileMode = len(file.fileMode())
 			}
@@ -314,7 +265,7 @@ func formatList(files []File, args Args) {
 			}
 		}
 
-		if args.ListExtend && runtime.GOOS == "linux" {
+		if args.listExtend && runtime.GOOS == "linux" {
 			if len(file.owner()) > align.owner {
 				align.owner = len(file.owner())
 			}
@@ -324,24 +275,24 @@ func formatList(files []File, args Args) {
 		}
 	}
 
-	if args.Bytes {
-		fmt.Fprintf(BUF_STDOUT, "total %d\n", totalSize)
+	if args.bytes {
+		fmt.Fprintf(bufStdout, "total %d\n", totalSize)
 	} else {
-		fmt.Fprintf(BUF_STDOUT, "total %s\n", humanSize(totalSize))
+		fmt.Fprintf(bufStdout, "total %s\n", humanizeSize(totalSize))
 	}
 
 	for i, file := range files {
 		var line string
-		if args.ListExtend {
+		if args.listExtend {
 			line += fmt.Sprintf("%-*s ", align.fileMode, file.fileMode())
 			line += fmt.Sprintf("%*d ", align.nLink, file.nLink())
 		}
 
-		if args.ListExtend && runtime.GOOS == "linux" {
+		if args.listExtend && runtime.GOOS == "linux" {
 			owner := file.owner()
 			group := file.group()
 
-			// On WSL under /mnt/ owner is ""
+			// WSL: file owner of /mnt/ is ""
 			if owner == "" {
 				owner = group
 			}
@@ -351,13 +302,13 @@ func formatList(files []File, args Args) {
 		}
 
 		sizeEntry := fmt.Sprintf("%*s", align.size, sizes[i])
-		if !args.NoColors {
+		if !args.noColors {
 			sizeEntry = aurora.Colorize(sizeEntry, aurora.GreenFg).String()
 		}
 		line += sizeEntry + " "
 		line += files[i].modTime() + " "
 		line += files[i].colored(args)
 
-		fmt.Fprintln(BUF_STDOUT, line)
+		fmt.Fprintln(bufStdout, line)
 	}
 }
