@@ -32,7 +32,7 @@ Flags:
     -b, --bytes          with -l: print size in bytes
     -x, --extend         with -l: print filemode and owner/group info
     -t, --tree           use a tree format
-    -s, --sort string    sort by [size|s|time|t|extension|x|category|c]
+    -s, --sort string    sort by size (s), time (t), extension (x), category (c)
     -r, --reverse        reverse file order
     -c, --columns int    set maximum amount of columns
         --col-sep int    set column separator length (default 2)
