@@ -21,6 +21,13 @@ const (
 	Shell   = ""
 	Subl    = ""
 	Win     = ""
+	Word    = ""
+	Pdf     = ""
+	Excel   = ""
+	Html    = ""
+	Log     = ""
+	Jar     = ""
+	Xml     = ""
 )
 
 // To add new icons just add a new key: value pair here
@@ -63,9 +70,9 @@ var Extensions = map[string]string{
 	".sublime_settings": Subl,
 	".sublime_theme":    Subl,
 	".txt":              "",
-	"ps1":               Shell,
-	"sh":                Shell,
-	"shell":             Shell,
+	".ps1":              Shell,
+	".sh":               Shell,
+	".shell":            Shell,
 	".bat":              Win,
 	".exe":              Win,
 	".msi":              Win,
@@ -81,7 +88,6 @@ var Extensions = map[string]string{
 	".egg":  Archive,
 	".gz":   Archive,
 	".iso":  Archive,
-	".jar":  Archive,
 	".lha":  Archive,
 	".mar":  Archive,
 	".pak":  Archive,
@@ -125,6 +131,7 @@ var Extensions = map[string]string{
 	".tiff": Image,
 	".webp": Image,
 	".xcf":  Image,
+	".icns": Image,
 
 	".aac":  Audio,
 	".aiff": Audio,
@@ -181,4 +188,23 @@ var Extensions = map[string]string{
 	".webm":  Video,
 	".wmv":   Video,
 	".yuv":   Video,
+
+	".jar":  Jar,
+	".java": Jar,
+
+	".pdf":  Pdf,
+	".docx": Word,
+	".doc":  Word,
+	".xlsx": Excel,
+	".xls":  Excel,
+	".csv":  Excel,
+
+	".html": Html,
+	".htm":  Html,
+	".xml":  Xml,
+	".iml":  Xml,
+
+	".log":  Log,
+	".json": "",
+	".epub": "",
 }
