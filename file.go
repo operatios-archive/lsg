@@ -124,7 +124,7 @@ func (f File) icon() string {
 		return icons.Dir
 	}
 
-	if icon, ok := icons.Extensions[f.ext()]; ok {
+	if icon, ok := icons.Extensions[strings.ToLower(f.ext())]; ok {
 		return icon
 	}
 
